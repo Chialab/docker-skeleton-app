@@ -1,0 +1,13 @@
+conf/apache/*
+conf/nginx/*
+!conf/apache/000-default.conf
+!conf/nginx/000-default.conf
+
+images/*
+!images/empty
+
+www/*
+!www/html
+www/html/*
+!www/html/index.html
+!www/html/info.php

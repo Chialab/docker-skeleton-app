@@ -1,0 +1,172 @@
+###
+# Base data container.
+###
+data:
+  image: debian:jessie
+  command: /bin/true
+  container_name: docker_data
+  volumes:
+    - ./www/:/var/www/
+
+###
+# Elasticsearch, Logstash, Kibana
+###
+elasticsearch:
+  image: elasticsearch
+  volumes_from:
+    - docker_data_elasticsearch
+
+logstash:
+  image: logstash
+  command: logstash -f /config-dir/logstash.conf
+  links:
+    - elasticsearch
+  volumes:
+    - ./conf/logstash.conf:/config-dir/logstash.conf:ro
+
+kibana:
+  image: kibana
+  links:
+    - elasticsearch
+
+###
+# Cache
+###
+memcached:
+  image: memcached
+
+redis:
+  image: redis
+
+###
+# Database
+###
+mysql56:
+  image: mysql:5.6
+  volumes_from:
+    - docker_data_mysql56
+
+mysql57:
+  image: mysql:5.7
+  volumes_from:
+    - docker_data_mysql57
+
+pgsql94:
+  image: postgres:9.4
+  volumes_from:
+    - docker_data_pgsql94
+
+pgsql95:
+  image: postgres:9.5
+  volumes_from:
+    - docker_data_pgsql95
+
+###
+# Apache
+###
+php56_apache:
+  image: chialab/php-dev:5.6-apache
+  links:
+    - elasticsearch
+    - memcached
+    - mysql56
+    - mysql57
+    - pgsql94
+    - pgsql95
+    - redis
+  ports:
+    - "8056:80"
+  volumes_from:
+    - data
+  volumes:
+    - ./conf/apache/:/etc/apache2/sites-enabled/:ro
+
+php55_apache:
+  image: chialab/php-dev:5.5-apache
+  links:
+    - elasticsearch
+    - memcached
+    - mysql56
+    - mysql57
+    - pgsql94
+    - pgsql95
+    - redis
+  ports:
+    - "8055:80"
+  volumes_from:
+    - data
+  volumes:
+    - ./conf/apache/:/etc/apache2/sites-enabled/:ro
+
+php54_apache:
+  image: chialab/php-dev:5.4-apache
+  links:
+    - elasticsearch
+    - memcached
+    - mysql56
+    - mysql57
+    - pgsql94
+    - pgsql95
+    - redis
+  ports:
+    - "8054:80"
+  volumes_from:
+    - data
+  volumes:
+    - ./conf/apache/:/etc/apache2/sites-enabled/:ro
+
+###
+# PHP FPM & Nginx
+###
+php56_fpm:
+  image: chialab/php-dev:5.6-fpm
+  links:
+    - elasticsearch
+    - memcached
+    - mysql56
+    - mysql57
+    - pgsql94
+    - pgsql95
+    - redis
+  volumes_from:
+    - data
+
+php55_fpm:
+  image: chialab/php-dev:5.5-fpm
+  links:
+    - elasticsearch
+    - memcached
+    - mysql56
+    - mysql57
+    - pgsql94
+    - pgsql95
+    - redis
+  volumes_from:
+    - data
+
+php54_fpm:
+  image: chialab/php-dev:5.4-fpm
+  links:
+    - elasticsearch
+    - memcached
+    - mysql56
+    - mysql57
+    - pgsql94
+    - pgsql95
+    - redis
+  volumes_from:
+    - data
+
+nginx:
+  image: nginx
+  links:
+    - elasticsearch
+    - php56_fpm
+    - php55_fpm
+    - php54_fpm
+  ports:
+    - "8080:80"
+  volumes_from:
+    - data
+  volumes:
+    - ./conf/nginx/:/etc/nginx/conf.d/:ro

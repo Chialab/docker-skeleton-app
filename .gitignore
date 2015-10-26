@@ -1,7 +1,9 @@
 conf/apache/*
 conf/nginx/*
-!conf/apache/000-default.conf
-!conf/nginx/000-default.conf
+!conf/apache/000-general.conf
+!conf/apache/001-default.conf
+!conf/nginx/000-general.conf
+!conf/nginx/001-default.conf
 
 images/*
 !images/empty

@@ -1,6 +1,12 @@
 ###
-# Base data container.
+# Base data container
 ###
+env:
+  image: debian:jessie
+  environment:
+    - DOCKER_CLIENT_IP=192.168.99.1
+    - DOCKER_MACHINE_IP=192.168.99.100
+
 data:
   image: debian:jessie
   command: /bin/true
@@ -66,6 +72,8 @@ pgsql95:
 ###
 php56_apache:
   image: chialab/php-dev:5.6-apache
+  extends:
+    service: env
   links:
     - elasticsearch
     - memcached
@@ -83,6 +91,8 @@ php56_apache:
 
 php55_apache:
   image: chialab/php-dev:5.5-apache
+  extends:
+    service: env
   links:
     - elasticsearch
     - memcached
@@ -100,6 +110,8 @@ php55_apache:
 
 php54_apache:
   image: chialab/php-dev:5.4-apache
+  extends:
+    service: env
   links:
     - elasticsearch
     - memcached

@@ -4,8 +4,9 @@ MYSQL_ROOT_PASSWORD?=root
 POSTGRES_PASSWORD?=postgres
 PREFIX?=docker_
 
-setup:
+pull:
 	docker-compose pull
+setup:
 	@if [[ -z `docker ps -a | grep $(PREFIX)data_mysql56` ]]; then \
 		echo 'MySQL 5.6 data container missing.'; \
 		docker run -v /var/lib/mysql -e MYSQL_ROOT_PASSWORD=$(MYSQL_ROOT_PASSWORD) --name $(PREFIX)data_mysql56 -d mysql:5.6; \

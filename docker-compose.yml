@@ -1,16 +1,11 @@
 ###
 # Base data container
 ###
-env:
-  image: debian:jessie
-  environment:
-    - DOCKER_CLIENT_IP=192.168.99.1
-    - DOCKER_MACHINE_IP=192.168.99.100
-
 data:
   image: debian:jessie
   command: /bin/true
   container_name: docker_data
+  privileged: true
   volumes:
     - ./www/:/var/www/
 
@@ -18,62 +13,100 @@ data:
 # Elasticsearch, Logstash, Kibana
 ###
 elasticsearch:
-  image: elasticsearch
-  volumes_from:
-    - docker_data_elasticsearch
+  # image: elasticsearch
+  build: images/elasticsearch
+  volumes:
+    - "elasticsearch:/usr/share/elasticsearch/data"
 
 logstash:
   image: logstash
   command: logstash -f /config-dir/logstash.conf
   links:
     - elasticsearch
+  ports:
+    - "127.0.0.1:12201:12201"
+    - "127.0.0.1:12201:12201/udp"
   volumes:
     - ./conf/logstash.conf:/config-dir/logstash.conf:ro
 
 kibana:
-  image: kibana
+  # image: kibana
+  build: images/kibana
   links:
     - elasticsearch
+  log_driver: gelf
+  log_opt:
+    gelf-address: "udp://localhost:12201"
+  ports:
+    - "5601:5601"
 
 ###
 # Cache
 ###
 memcached:
-  image: memcached
+  # image: chialab/memcached
+  build: images/memcached
 
 redis:
   image: redis
+  volumes:
+    - "redis:/data"
 
 ###
 # Database
 ###
 mysql56:
   image: mysql:5.6
-  volumes_from:
-    - docker_data_mysql56
+  environment:
+    - MYSQL_ROOT_PASSWORD=root
+  # log_driver: gelf
+  # log_opt:
+  #   gelf-address: "udp://localhost:12201"
+  ports:
+    - "3306:3306"
+  volumes:
+    - "mysql56:/var/lib/mysql"
 
 mysql57:
   image: mysql:5.7
-  volumes_from:
-    - docker_data_mysql57
+  environment:
+    - MYSQL_ROOT_PASSWORD=root
+  # log_driver: gelf
+  # log_opt:
+  #   gelf-address: "udp://localhost:12201"
+  ports:
+    - "3307:3306"
+  volumes:
+    - "mysql57:/var/lib/mysql"
 
 pgsql94:
   image: postgres:9.4
-  volumes_from:
-    - docker_data_pgsql94
+  # log_driver: gelf
+  # log_opt:
+  #   gelf-address: "udp://localhost:12201"
+  ports:
+    - "5432:5432"
+  volumes:
+    - "pgsql94:/var/lib/postgresql/data"
 
 pgsql95:
   image: postgres:9.5
-  volumes_from:
-    - docker_data_pgsql95
+  # log_driver: gelf
+  # log_opt:
+  #   gelf-address: "udp://localhost:12201"
+  ports:
+    - "5532:5432"
+  volumes:
+    - "pgsql95:/var/lib/postgresql/data"
 
 ###
 # Apache
 ###
 php56_apache:
   image: chialab/php-dev:5.6-apache
-  extends:
-    service: env
+  environment:
+    - DOCKER_CLIENT_IP=192.168.99.1
+    - DOCKER_MACHINE_IP=192.168.99.100
   links:
     - elasticsearch
     - memcached
@@ -82,6 +115,9 @@ php56_apache:
     - pgsql94
     - pgsql95
     - redis
+  log_driver: gelf
+  log_opt:
+    gelf-address: "udp://localhost:12201"
   ports:
     - "8056:80"
   volumes_from:
@@ -91,8 +127,9 @@ php56_apache:
 
 php55_apache:
   image: chialab/php-dev:5.5-apache
-  extends:
-    service: env
+  environment:
+    - DOCKER_CLIENT_IP=192.168.99.1
+    - DOCKER_MACHINE_IP=192.168.99.100
   links:
     - elasticsearch
     - memcached
@@ -101,6 +138,9 @@ php55_apache:
     - pgsql94
     - pgsql95
     - redis
+  log_driver: gelf
+  log_opt:
+    gelf-address: "udp://localhost:12201"
   ports:
     - "8055:80"
   volumes_from:
@@ -110,8 +150,9 @@ php55_apache:
 
 php54_apache:
   image: chialab/php-dev:5.4-apache
-  extends:
-    service: env
+  environment:
+    - DOCKER_CLIENT_IP=192.168.99.1
+    - DOCKER_MACHINE_IP=192.168.99.100
   links:
     - elasticsearch
     - memcached
@@ -120,6 +161,9 @@ php54_apache:
     - pgsql94
     - pgsql95
     - redis
+  log_driver: gelf
+  log_opt:
+    gelf-address: "udp://localhost:12201"
   ports:
     - "8054:80"
   volumes_from:
@@ -182,3 +226,20 @@ nginx:
     - data
   volumes:
     - ./conf/nginx/:/etc/nginx/conf.d/:ro
+    - "nginx:/var/cache/nginx"
+
+###
+# Composer
+###
+composer:
+  image: chialab/php-dev
+  links:
+    - elasticsearch
+    - memcached
+    - mysql56
+    - mysql57
+    - pgsql94
+    - pgsql95
+    - redis
+  volumes_from:
+    - data

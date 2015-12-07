@@ -13,8 +13,7 @@ data:
 # Elasticsearch, Logstash, Kibana
 ###
 elasticsearch:
-  # image: elasticsearch
-  build: images/elasticsearch
+  image: chialab/elasticsearch
   volumes:
     - "elasticsearch:/usr/share/elasticsearch/data"
 
@@ -30,8 +29,7 @@ logstash:
     - ./conf/logstash.conf:/config-dir/logstash.conf:ro
 
 kibana:
-  # image: kibana
-  build: images/kibana
+  image: chialab/kibana
   links:
     - elasticsearch
   log_driver: gelf
@@ -44,8 +42,7 @@ kibana:
 # Cache
 ###
 memcached:
-  # image: chialab/memcached
-  build: images/memcached
+  image: chialab/memcached
 
 redis:
   image: redis
